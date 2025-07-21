@@ -1,0 +1,36 @@
+<mvc:View controllerName="ns.invoiceui.controller.View1"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m">
+    <Page id="page" title="{i18n>title}">
+    <VBox>
+    <!-- Top Toolbar -->
+    <Toolbar>
+        <ToolbarSpacer />
+      <Button text="Create Invoice" press="onOpenCreateDialog" icon="sap-icon://add" />
+    </Toolbar>
+
+    <!-- Table -->
+    <Table id="invoiceTable" items="{Invoices>/}" mode="None">
+      <columns>
+        <Column><Text text="Invoice No"/></Column>
+        <Column><Text text="Date"/></Column>
+        <Column><Text text="Amount"/></Column>
+        <Column><Text text="Actions"/></Column>
+      </columns>
+      <items>
+        <ColumnListItem>
+          <cells>
+            <Text text="{Invoices>invoiceNumber}" />
+            <Text text="{Invoices>date}" />
+            <Text text="{Invoices>amount}" />
+            <HBox>
+              <Button icon="sap-icon://edit" press="onOpenEditDialog" />
+              <Button class="sapUiSmallMarginBegin" icon="sap-icon://delete" press="onDelete" />
+            </HBox>
+          </cells>
+        </ColumnListItem>
+      </items>
+    </Table>
+  </VBox>
+    </Page>
+</mvc:View>

@@ -1,0 +1,20 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+  <Dialog id="createDialog" title="Create Invoice" draggable="true" resizable="true" contentWidth="400px" contentHeight="300px">
+    <VBox class="sapUiSmallMargin">
+      <Label text="Invoice Number"/>
+      <Input id="idInvoiceNumber" />
+
+      <Label text="Date"/>
+      <DatePicker id="idDate" valueFormat="yyyy-MM-dd" />
+
+      <Label text="Amount"/>
+      <Input id="idAmount" type="Number" />
+    </VBox>
+    <beginButton>
+      <Button text="Submit" press="onCreateSubmit"/>
+    </beginButton>
+    <endButton>
+      <Button text="Cancel" press="onCreateCancel"/>
+    </endButton>
+  </Dialog>
+</core:FragmentDefinition>

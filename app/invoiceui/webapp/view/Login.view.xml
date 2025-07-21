@@ -1,0 +1,5 @@
+<VBox class="sapUiSmallMargin" alignItems="Center">
+  <Input id="email" placeholder="Email" width="300px" />
+  <Input id="password" placeholder="Password" type="Password" width="300px" />
+  <Button text="Login" press="onLogin" width="300px" />
+</VBox>
