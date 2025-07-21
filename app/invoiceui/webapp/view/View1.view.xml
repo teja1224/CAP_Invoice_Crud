@@ -21,7 +21,7 @@
         <ColumnListItem>
           <cells>
             <Text text="{Invoices>invoiceNumber}" />
-            <Text text="{Invoices>date}" />
+            <Text text="{Invoices>dateFormatted}" />
             <Text text="{Invoices>amount}" />
             <HBox>
               <Button icon="sap-icon://edit" press="onOpenEditDialog" />

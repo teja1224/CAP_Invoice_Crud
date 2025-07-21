@@ -3,7 +3,7 @@ sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/core/Fragment",
     "sap/m/MessageToast",
-    "sap/m/MessageBox"
+    "sap/m/MessageBox",
 ], (Controller, Fragment, MessageToast, MessageBox) => {
     "use strict";
 
@@ -11,7 +11,8 @@ sap.ui.define([
         onInit() {
             this.onRead();
         },
-        onRead: function() {
+
+        onRead: function () {
             const oView = this.getView();
             const oModel = this.getOwnerComponent().getModel();
 
@@ -20,12 +21,18 @@ sap.ui.define([
                     //adding edit path
                     oData.results.forEach(item => {
                         item.editPath = `/Invoices(${item.ID})`;
+                        const rawDate = new Date(item.date);
+                        item.dateFormatted = rawDate.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric"
+                        });
                     });
                     const oJSONModel = new sap.ui.model.json.JSONModel();
                     oJSONModel.setData(oData.results);
-                    oView.setModel(oJSONModel,"Invoices")
+                    oView.setModel(oJSONModel, "Invoices")
                 },
-                error: function (oError){
+                error: function (oError) {
                     sap.m.MessageToast.show("Failed to load invoices");
                     console.error(oError);
                 }
@@ -35,7 +42,7 @@ sap.ui.define([
         onOpenCreateDialog: function () {
 
             const view = this.getView();
-            
+
             if (!this.createDialog) {
                 Fragment.load({
                     name: "ns.invoiceui.fragment.CreateInvoice",
@@ -52,23 +59,24 @@ sap.ui.define([
             }
         },
 
-        clearDialogInput: function(){
+        clearDialogInput: function () {
             sap.ui.getCore().byId("idInvoiceNumber").setValue("")
             sap.ui.getCore().byId("idDate").setValue("")
             sap.ui.getCore().byId("idAmount").setValue("")
         },
 
-        onCreateSubmit: function() {
+        onCreateSubmit: function () {
             const oDialog = this.createDialog;
+
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("idInvoiceNumber").getValue(),
-                date:sap.ui.getCore().byId("idDate").getValue(),
+                date: sap.ui.getCore().byId("idDate").getValue(),
                 amount: parseFloat(sap.ui.getCore().byId("idAmount").getValue()),
             };
             const oModel = this.getView().getModel()
 
             oModel.create("/Invoices", payload, {
-                success: ()=> {
+                success: () => {
                     MessageToast.show("Invoice Created")
                     this.clearDialogInput()
                     oDialog.close();
@@ -79,12 +87,12 @@ sap.ui.define([
             });
         },
 
-        onCreateCancel: function() {
+        onCreateCancel: function () {
             this.createDialog.close();
         },
 
-    //Work on Update Invoice
-        onOpenEditDialog: function(oEvent) {
+        //Work on Update Invoice
+        onOpenEditDialog: function (oEvent) {
             const oContext = oEvent.getSource().getParent().getBindingContext("Invoices");
             const data = oContext.getObject();
             this.editPath = data.editPath;
@@ -106,13 +114,19 @@ sap.ui.define([
             }
         },
 
-        _bindUpdateFields: function(data){
+        _bindUpdateFields: function (data) {
             sap.ui.getCore().byId("updateInvoiceNumber").setValue(data.invoiceNumber || "");
-            sap.ui.getCore().byId("updateDate").setValue(data.date || "");
+            const rawDate = new Date(data.date);
+            const formattedDate = rawDate.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            });
+            sap.ui.getCore().byId("updateDate").setValue(formattedDate || "");
             sap.ui.getCore().byId("updateAmount").setValue(data.amount || "");
         },
 
-        onUpdateSubmit: function (){
+        onUpdateSubmit: function () {
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("updateInvoiceNumber").getValue(),
                 date: sap.ui.getCore().byId("updateDate").getValue(),
@@ -133,7 +147,7 @@ sap.ui.define([
             })
         },
 
-        onUpdateCancel: function() {
+        onUpdateCancel: function () {
             this.updateDialog.close();
         },
 
@@ -142,25 +156,25 @@ sap.ui.define([
             const data = oContext.getObject();
             const sPath = data.editPath
             const oModel = this.getView().getModel();
-            const that=this;
+            const that = this;
             MessageBox.confirm("Are you sure you want to delete this invoice?", {
-              title: "Confirm Deletion",
-              onClose: function (oAction) {
-                if (oAction === "OK") {
-                    oModel.remove(sPath, {
-                    success: function () {
-                        MessageToast.show("Invoice deleted");
-                        // oModel.refresh();
-                        that.onRead();
-                    },
-                    error: function () {
-                      MessageToast.show("Delete failed");
+                title: "Confirm Deletion",
+                onClose: function (oAction) {
+                    if (oAction === "OK") {
+                        oModel.remove(sPath, {
+                            success: function () {
+                                MessageToast.show("Invoice deleted");
+                                // oModel.refresh();
+                                that.onRead();
+                            },
+                            error: function () {
+                                MessageToast.show("Delete failed");
+                            }
+                        });
                     }
-                  });
                 }
-              }
             });
-          }          
+        }
 
 
     });
