@@ -1,20 +1,38 @@
 <mvc:View controllerName="ns.invoiceui.controller.View1"
     xmlns:mvc="sap.ui.core.mvc"
-    xmlns="sap.m">
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
     <Page id="page" title="{i18n>title}">
     <VBox>
-    <!-- Top Toolbar -->
-    <Toolbar>
+  
+    <Toolbar class = "sapUiMediumMarginBottom" height="60px">
+        <ToolbarSpacer />
+        <HBox class="sapUiMeidumMarginBottom" >
+        <SearchField id="invoiceSearch" liveChange="onInvoiceSearch" width="250px" placeholder="Search InvoiceNumber" />
+        </HBox>
+          <ToolbarSpacer width="30px" />
+          <Label text="Filter by Status" design="Bold" />
+          <Select id="statusFilter" change="onStatusFilter" width="150px">
+            <items>
+              <core:Item key="" text="All" />
+              <core:Item key="Pending" text="Pending" />
+              <core:Item key="Paid" text="Paid" />
+            </items>
+          </Select>
+          <ToolbarSpacer width="30px"/>
+          <Button text="Reset" press="onClearFilters" icon="sap-icon://refresh"/>
         <ToolbarSpacer />
       <Button text="Create Invoice" press="onOpenCreateDialog" icon="sap-icon://add" />
     </Toolbar>
-
-    <!-- Table -->
-    <Table id="invoiceTable" items="{Invoices>/}" mode="None">
+    
+    
+    <Table id="invoiceTable" items="{Invoices>/}" noDataText="No invoices to display." mode="None">
       <columns>
-        <Column><Text text="Invoice No"/></Column>
+        <Column><Text text="Invoice Number"/></Column>
         <Column><Text text="Date"/></Column>
+        <Column><Text text="Description"/></Column>
         <Column><Text text="Amount"/></Column>
+        <Column><Text text="Status"/></Column>
         <Column><Text text="Actions"/></Column>
       </columns>
       <items>
@@ -22,10 +40,14 @@
           <cells>
             <Text text="{Invoices>invoiceNumber}" />
             <Text text="{Invoices>dateFormatted}" />
-            <Text text="{Invoices>amount}" />
+            <Text text="{Invoices>description}" />
+            <ObjectNumber number="{Invoices>amount}" unit="INR" />
+            <ObjectStatus
+              text="{Invoices>status}"
+              state="{= ${Invoices>status} === 'Paid' ? 'Success' : 'Warning'}" />
             <HBox>
               <Button icon="sap-icon://edit" press="onOpenEditDialog" />
-              <Button class="sapUiSmallMarginBegin" icon="sap-icon://delete" press="onDelete" />
+              <Button class="sapUiTinyMarginBegin" icon="sap-icon://delete" press="onDelete" />
             </HBox>
           </cells>
         </ColumnListItem>

@@ -1,14 +1,28 @@
 <core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
-  <Dialog id="updateDialog" title="Update Invoice" draggable="true" resizable="true" contentWidth="400px" contentHeight="300px">
+  <Dialog id="updateDialog" title="Update Invoice" draggable="true" resizable="true" contentWidth="400px" contentHeight="400px">
     <VBox class="sapUiSmallMargin">
       <Label text="Invoice Number"/>
       <Input id="updateInvoiceNumber" editable="false" />
 
       <Label text="Date"/>
-      <DatePicker id="updateDate" valueFormat="yyyy-MM-dd" />
+      <DatePicker 
+  displayFormat="MMM dd, yyyy"
+  valueFormat="yyyy-MM-dd"
+  change="onDateChange" id="updateDate" />
+
+      <Label text="Description"/>
+      <TextArea id="updateDescription" rows="3" growing="true" width="100%" />
 
       <Label text="Amount"/>
       <Input id="updateAmount" type="Number" />
+
+      <Label text="Status"/>
+      <Select id="updateStatus" width="100%">
+        <items>
+          <core:Item key="Pending" text="Pending"/>
+          <core:Item key="Paid" text="Paid"/>
+        </items>
+      </Select>
 
     </VBox>
     <beginButton>

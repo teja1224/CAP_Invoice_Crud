@@ -1,5 +1,7 @@
-<VBox class="sapUiSmallMargin" alignItems="Center">
-  <Input id="email" placeholder="Email" width="300px" />
-  <Input id="password" placeholder="Password" type="Password" width="300px" />
-  <Button text="Login" press="onLogin" width="300px" />
-</VBox>
+<!-- <mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m" controllerName="ns.invoiceui.controller.Login">
+  <VBox class="sapUiSmallMargin" width="300px">
+    <Input id="emailInput" placeholder="Enter Email" />
+    <Input id="passwordInput" type="Password" placeholder="Enter Password" />
+    <Button text="Login" press="onLogin" />
+  </VBox>
+</mvc:View> -->

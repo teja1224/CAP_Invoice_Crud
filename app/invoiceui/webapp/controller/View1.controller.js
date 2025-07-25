@@ -1,4 +1,3 @@
-
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/core/Fragment",
@@ -12,13 +11,11 @@ sap.ui.define([
             this.onRead();
         },
 
-        onRead: function () {
+        onRead: function (statusFilter, searchValue) {
             const oView = this.getView();
             const oModel = this.getOwnerComponent().getModel();
-
-            oModel.read("/Invoices", {
+            const mParameters = {
                 success: function (oData) {
-                    //adding edit path
                     oData.results.forEach(item => {
                         item.editPath = `/Invoices(${item.ID})`;
                         const rawDate = new Date(item.date);
@@ -28,16 +25,80 @@ sap.ui.define([
                             day: "numeric"
                         });
                     });
+                    oData.results.sort((a, b) => new Date(b.date) - new Date(a.date));
                     const oJSONModel = new sap.ui.model.json.JSONModel();
                     oJSONModel.setData(oData.results);
-                    oView.setModel(oJSONModel, "Invoices")
+                    oView.setModel(oJSONModel, "AllInvoices");
+
+                    const visibleModel = new sap.ui.model.json.JSONModel(oData.results);
+                    
+                    oView.setModel(visibleModel, "Invoices");
                 },
                 error: function (oError) {
-                    sap.m.MessageToast.show("Failed to load invoices");
+                    MessageToast.show("Failed to load invoices");
                     console.error(oError);
                 }
-            })
+            };
+
+            // const allfilters = []
+        
+            // if (statusFilter) {
+            //     allfilters.push(new sap.ui.model.Filter("status", "EQ", statusFilter));
+            // }
+            // if (searchValue){
+            //     allfilters.push(new sap.ui.model.Filter("invoiceNumber", "Contains", searchValue))
+            // }
+            // if(allfilters.length>0){
+            //     mParameters.filters = [new sap.ui.model.Filter({ filters: allfilters, and:true})];
+            // }
+        
+            oModel.read("/Invoices", mParameters);
         },
+
+        clientfilter: function(selectedStatus,searchValue){
+            const oView = this.getView();
+            const allInvoices = oView.getModel("AllInvoices").getData()
+            let filteredInc = allInvoices;
+
+            if (selectedStatus){
+                filteredInc = filteredInc.filter(item => item.status===selectedStatus);
+            }
+            if (searchValue) {
+                const query = searchValue.toLowerCase()
+                filteredInc = filteredInc.filter(item => item.invoiceNumber && item.invoiceNumber.toLowerCase().includes(query))
+            }
+
+            filteredInc.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const filteredModel = new sap.ui.model.json.JSONModel(filteredInc)
+            oView.setModel(filteredModel, "Invoices")
+        }, 
+        
+
+        onStatusFilter: function (oEvent) {
+            const selectedStatus = oEvent.getSource().getSelectedKey();
+            const searchValue = this.byId("invoiceSearch").getValue();
+            this.clientfilter(selectedStatus,searchValue);
+        },
+
+        onInvoiceSearch: function(oEvent){
+            const searchValue = oEvent.getSource().getValue();
+            const statusValue = this.byId("statusFilter").getSelectedKey();
+            this.clientfilter(statusValue, searchValue)
+        },
+
+        onClearFilters: function(){
+            this.byId("invoiceSearch").setValue("");
+            this.byId("statusFilter").setSelectedKey("");
+            this.clientfilter()
+        },
+
+        formatDateToLocal: function(dateObj) {
+            const year = dateObj.getFullYear();
+            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            const day = dateObj.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          },
+          
 
         onOpenCreateDialog: function () {
 
@@ -63,6 +124,8 @@ sap.ui.define([
             sap.ui.getCore().byId("idInvoiceNumber").setValue("")
             sap.ui.getCore().byId("idDate").setValue("")
             sap.ui.getCore().byId("idAmount").setValue("")
+            sap.ui.getCore().byId("idDescription").setValue("");
+            sap.ui.getCore().byId("idStatus").setSelectedKey("Pending");
         },
 
         onCreateSubmit: function () {
@@ -72,6 +135,8 @@ sap.ui.define([
                 invoiceNumber: sap.ui.getCore().byId("idInvoiceNumber").getValue(),
                 date: sap.ui.getCore().byId("idDate").getValue(),
                 amount: parseFloat(sap.ui.getCore().byId("idAmount").getValue()),
+                description: sap.ui.getCore().byId("idDescription").getValue(),
+                status: sap.ui.getCore().byId("idStatus").getSelectedKey()
             };
             const oModel = this.getView().getModel()
 
@@ -83,7 +148,20 @@ sap.ui.define([
                     // oModel.refresh();
                     this.onRead();
                 },
-                error: () => MessageToast.show("Invoice Creation Failed")
+                error: (oError) => {
+                    let message = "Create failed";
+    
+                    if (oError && oError.responseText) {
+                        try {
+                            const errorObj = JSON.parse(oError.responseText);
+                            message = errorObj.error.message.value || message;
+                        } catch (e) {
+                        }
+                    }
+        
+                    MessageBox.error(message);
+                    this.clearDialogInput()
+                }
             });
         },
 
@@ -116,21 +194,24 @@ sap.ui.define([
 
         _bindUpdateFields: function (data) {
             sap.ui.getCore().byId("updateInvoiceNumber").setValue(data.invoiceNumber || "");
-            const rawDate = new Date(data.date);
-            const formattedDate = rawDate.toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "numeric"
-            });
-            sap.ui.getCore().byId("updateDate").setValue(formattedDate || "");
+            if (data.date) {
+                sap.ui.getCore().byId("updateDate").setDateValue(new Date(data.date));
+            } else {
+                sap.ui.getCore().byId("updateDate").setValue("");
+            }
             sap.ui.getCore().byId("updateAmount").setValue(data.amount || "");
+            sap.ui.getCore().byId("updateDescription").setValue(data.description || "");
+            sap.ui.getCore().byId("updateStatus").setSelectedKey(data.status || "Pending");
         },
 
         onUpdateSubmit: function () {
+            const dateObj = sap.ui.getCore().byId("updateDate").getDateValue();
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("updateInvoiceNumber").getValue(),
-                date: sap.ui.getCore().byId("updateDate").getValue(),
-                amount: parseFloat(sap.ui.getCore().byId("updateAmount").getValue())
+                date: this.formatDateToLocal(dateObj),
+                amount: parseFloat(sap.ui.getCore().byId("updateAmount").getValue()),
+                description: sap.ui.getCore().byId("updateDescription").getValue(),
+                status: sap.ui.getCore().byId("updateStatus").getSelectedKey()
             };
             const oModel = this.getView().getModel();
 
