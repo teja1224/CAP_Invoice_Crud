@@ -1,20 +1,20 @@
 <core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
   <Dialog id="createDialog" title="Create Invoice" draggable="true" resizable="true" contentWidth="400px" contentHeight="400px">
     <VBox class="sapUiSmallMargin">
-      <Label text="Invoice Number"/>
-      <Input id="idInvoiceNumber" />
+      <Label text="Invoice Number" required="true"/>
+      <Input id="idInvoiceNumber" required="true"/>
 
-      <Label text="Date"/>
-      <DatePicker id="idDate" valueFormat="yyyy-MM-dd" />
+      <Label text="Date" required="true"/>
+      <DatePicker id="idDate" valueFormat="yyyy-MM-dd" required="true" />
 
-       <Label text="Description"/>
-      <TextArea id="idDescription" rows="3" growing="true" width="100%" />
+       <Label text="Description" required="true"/>
+      <TextArea id="idDescription" rows="3" growing="true" width="100%" required="true"/>
 
-      <Label text="Amount"/>
-      <Input id="idAmount" type="Number" />
+      <Label text="Amount" required="true"/>
+      <Input id="idAmount" type="Number" required="true"/>
 
-      <Label text="Status"/>
-      <Select id="idStatus" width="100%">
+      <Label text="Status" required="true"/>
+      <Select id="idStatus" width="100%" required="true">
         <items>
           <core:Item key="Pending" text="Pending"/>
           <core:Item key="Paid" text="Paid"/>

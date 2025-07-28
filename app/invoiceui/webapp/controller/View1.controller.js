@@ -11,7 +11,7 @@ sap.ui.define([
             this.onRead();
         },
 
-        onRead: function (statusFilter, searchValue) {
+        onRead: function () {
             const oView = this.getView();
             const oModel = this.getOwnerComponent().getModel();
             const mParameters = {
@@ -68,7 +68,7 @@ sap.ui.define([
                 filteredInc = filteredInc.filter(item => item.invoiceNumber && item.invoiceNumber.toLowerCase().includes(query))
             }
 
-            filteredInc.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // filteredInc.sort((a, b) => new Date(b.date) - new Date(a.date));
             const filteredModel = new sap.ui.model.json.JSONModel(filteredInc)
             oView.setModel(filteredModel, "Invoices")
         }, 
@@ -99,6 +99,46 @@ sap.ui.define([
             return `${year}-${month}-${day}`;
           },
           
+        //Mandatory fields
+        validateFields: function(dialogType) {
+            const fieldIds = {
+                create: {
+                    dialogId: "createDialog",
+                    fields:[
+                        "idInvoiceNumber",
+                        "idDate",
+                        "idDescription",
+                        "idAmount",
+                        "idStatus"
+                    ]
+                },
+                update: {
+                    dialogId:"updateDialog",
+                    fields: [
+                        "updateDate",
+                        "updateDescription",
+                        "updateAmount",
+                        "updateStatus"
+                    ]
+                }
+            }
+            const {dialog, fields} = fieldIds[dialogType]
+            let isValid = true
+            fields.forEach((fieldId) => {
+                const control = sap.ui.getCore().byId(fieldId)
+                const value = control.getValue?control.getValue():control.getSelectedKey?.();
+
+                if(!value){
+                    control.setValueState("Error")
+                    control.setValueStateText("This field is required");
+                    isValid=false;
+                }
+                else{
+                    control.setValueState("None");
+                }
+            })
+            return isValid;
+        },
 
         onOpenCreateDialog: function () {
 
@@ -110,12 +150,14 @@ sap.ui.define([
                     controller: this
                 }).then(function (oDialog) {
                     view.addDependent(oDialog);
-                    this.clearDialogInput()
+                    this.clearDialogInput();
+                    const datePicker = oDialog.getContent()[0].getItems().find(item => item.getId().includes("idDate"));
+                    datePicker.setMaxDate(new Date());
                     oDialog.open();
                     this.createDialog = oDialog;
                 }.bind(this));
             } else {
-                // this.clearDialogInput()
+                this.clearDialogInput()
                 this.createDialog.open();
             }
         },
@@ -129,11 +171,24 @@ sap.ui.define([
         },
 
         onCreateSubmit: function () {
+            if (!this.validateFields("create")){
+                MessageToast.show("Please fill in all fields.")
+                return;
+            }
             const oDialog = this.createDialog;
+            const oDatePicker = sap.ui.getCore().byId("idDate");
+            const selectedDate = oDatePicker.getDateValue();
+            // Validation: check if date is selected
+            if (!selectedDate) {
+                oDatePicker.setValueState("Error");
+                oDatePicker.setValueStateText("Please select a valid date.");
+                MessageToast.show("Please select date from DatePicker");
+                return;
+            }
 
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("idInvoiceNumber").getValue(),
-                date: sap.ui.getCore().byId("idDate").getValue(),
+                date: oDatePicker.getValue(), 
                 amount: parseFloat(sap.ui.getCore().byId("idAmount").getValue()),
                 description: sap.ui.getCore().byId("idDescription").getValue(),
                 status: sap.ui.getCore().byId("idStatus").getSelectedKey()
@@ -160,7 +215,7 @@ sap.ui.define([
                     }
         
                     MessageBox.error(message);
-                    this.clearDialogInput()
+                    // this.clearDialogInput()
                 }
             });
         },
@@ -170,7 +225,7 @@ sap.ui.define([
         },
 
         //Work on Update Invoice
-        onOpenEditDialog: function (oEvent) {
+        onOpenUpdateDialog: function (oEvent) {
             const oContext = oEvent.getSource().getParent().getBindingContext("Invoices");
             const data = oContext.getObject();
             this.editPath = data.editPath;
@@ -183,6 +238,8 @@ sap.ui.define([
                 }).then(function (oDialog) {
                     view.addDependent(oDialog);
                     this._bindUpdateFields(data);
+                    const datePicker = oDialog.getContent()[0].getItems().find(item => item.getId().includes("updateDate"));
+                    datePicker.setMaxDate(new Date());
                     oDialog.open();
                     this.updateDialog = oDialog;
                 }.bind(this));
@@ -203,12 +260,31 @@ sap.ui.define([
             sap.ui.getCore().byId("updateDescription").setValue(data.description || "");
             sap.ui.getCore().byId("updateStatus").setSelectedKey(data.status || "Pending");
         },
-
+        
         onUpdateSubmit: function () {
-            const dateObj = sap.ui.getCore().byId("updateDate").getDateValue();
+            if(!this.validateFields("update")){
+                MessageToast.show("Please fill in all fields")
+                return;
+            }
+            const oDatePicker = sap.ui.getCore().byId("updateDate");
+            const selectedDate = oDatePicker.getDateValue();
+            // Validation: check if date is selected
+            if (!selectedDate) {
+                oDatePicker.setValueState("Error");
+                oDatePicker.setValueStateText("Please select a valid date.");
+                MessageToast.show("Please select date from DatePicker");
+                return;
+            }
+            if (selectedDate>new Date()){
+                oDatePicker.setValueState("Error");
+                oDatePicker.setValueStateText("Future dates are not allowed.");
+                MessageToast.show("Future dates are not allowed.");
+                return;
+            }
+
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("updateInvoiceNumber").getValue(),
-                date: this.formatDateToLocal(dateObj),
+                date: this.formatDateToLocal(selectedDate),
                 amount: parseFloat(sap.ui.getCore().byId("updateAmount").getValue()),
                 description: sap.ui.getCore().byId("updateDescription").getValue(),
                 status: sap.ui.getCore().byId("updateStatus").getSelectedKey()
@@ -217,13 +293,23 @@ sap.ui.define([
 
             oModel.update(this.editPath, payload, {
                 success: () => {
-                    MessageToast.show("Inovice Updated");
+                    MessageToast.show("Invoice Updated");
                     // oModel.refresh();
                     this.onRead();
                     this.updateDialog.close();
                 },
-                error: (err) => {
-                    MessageToast.show("Update Failed")
+                error: (oError) => {
+                    let message = "Update failed";
+    
+                    if (oError && oError.responseText) {
+                        try {
+                            const errorObj = JSON.parse(oError.responseText);
+                            message = errorObj.error.message.value || message;
+                        } catch (e) {
+                        }
+                    }
+        
+                    MessageBox.error(message);
                 }
             })
         },

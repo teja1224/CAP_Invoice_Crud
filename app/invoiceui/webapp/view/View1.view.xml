@@ -46,7 +46,7 @@
               text="{Invoices>status}"
               state="{= ${Invoices>status} === 'Paid' ? 'Success' : 'Warning'}" />
             <HBox>
-              <Button icon="sap-icon://edit" press="onOpenEditDialog" />
+              <Button icon="sap-icon://edit" press="onOpenUpdateDialog" />
               <Button class="sapUiTinyMarginBegin" icon="sap-icon://delete" press="onDelete" />
             </HBox>
           </cells>

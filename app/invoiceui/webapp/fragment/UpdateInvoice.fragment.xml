@@ -4,20 +4,17 @@
       <Label text="Invoice Number"/>
       <Input id="updateInvoiceNumber" editable="false" />
 
-      <Label text="Date"/>
-      <DatePicker 
-  displayFormat="MMM dd, yyyy"
-  valueFormat="yyyy-MM-dd"
-  change="onDateChange" id="updateDate" />
+      <Label text="Date" required="true"/>
+      <DatePicker valueFormat="yyyy-MM-dd" id="updateDate" change="onDateChange" required="true"/>
 
-      <Label text="Description"/>
+      <Label text="Description" required="true"/>
       <TextArea id="updateDescription" rows="3" growing="true" width="100%" />
 
-      <Label text="Amount"/>
-      <Input id="updateAmount" type="Number" />
+      <Label text="Amount" required="true"/>
+      <Input id="updateAmount" type="Number" required="true"/>
 
-      <Label text="Status"/>
-      <Select id="updateStatus" width="100%">
+      <Label text="Status" required="true"/>
+      <Select id="updateStatus" width="100%" required="true">
         <items>
           <core:Item key="Pending" text="Pending"/>
           <core:Item key="Paid" text="Paid"/>
