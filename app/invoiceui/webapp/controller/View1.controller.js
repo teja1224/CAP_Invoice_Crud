@@ -13,32 +13,40 @@ sap.ui.define([
 
         onRead: function () {
             const oView = this.getView();
-            const oModel = this.getOwnerComponent().getModel();
-            const mParameters = {
-                success: function (oData) {
-                    oData.results.forEach(item => {
-                        item.editPath = `/Invoices(${item.ID})`;
-                        const rawDate = new Date(item.date);
-                        item.dateFormatted = rawDate.toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric"
-                        });
-                    });
-                    oData.results.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    const oJSONModel = new sap.ui.model.json.JSONModel();
-                    oJSONModel.setData(oData.results);
-                    oView.setModel(oJSONModel, "AllInvoices");
+            oView.setBusy(true);
 
-                    const visibleModel = new sap.ui.model.json.JSONModel(oData.results);
-                    
-                    oView.setModel(visibleModel, "Invoices");
-                },
-                error: function (oError) {
-                    MessageToast.show("Failed to load invoices");
-                    console.error(oError);
-                }
-            };
+            setTimeout(()=>{
+                const oModel = this.getOwnerComponent().getModel();
+                const mParameters = {
+                    success: function (oData) {
+                        oData.results.forEach(item => {
+                            item.editPath = `/Invoices(${item.ID})`;
+                            const rawDate = new Date(item.date);
+                            item.dateFormatted = rawDate.toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric"
+                            });
+                        });
+                        oData.results.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        const oJSONModel = new sap.ui.model.json.JSONModel();
+                        oJSONModel.setData(oData.results);
+                        oView.setModel(oJSONModel, "AllInvoices");
+
+                        const visibleModel = new sap.ui.model.json.JSONModel(oData.results);
+                        
+                        oView.setModel(visibleModel, "Invoices");
+                        oView.setBusy(false)
+                    },
+                    error: function (oError) {
+                        MessageToast.show("Failed to load invoices");
+                        console.error(oError);
+                        oView.setBusy(false)
+                    }
+                };
+                oModel.read("/Invoices", mParameters);
+            },1200)
+
 
             // const allfilters = []
         
@@ -52,25 +60,30 @@ sap.ui.define([
             //     mParameters.filters = [new sap.ui.model.Filter({ filters: allfilters, and:true})];
             // }
         
-            oModel.read("/Invoices", mParameters);
+            
         },
-
         clientfilter: function(selectedStatus,searchValue){
             const oView = this.getView();
-            const allInvoices = oView.getModel("AllInvoices").getData()
-            let filteredInc = allInvoices;
+            oView.setBusy(true)
 
-            if (selectedStatus){
-                filteredInc = filteredInc.filter(item => item.status===selectedStatus);
-            }
-            if (searchValue) {
-                const query = searchValue.toLowerCase()
-                filteredInc = filteredInc.filter(item => item.invoiceNumber && item.invoiceNumber.toLowerCase().includes(query))
-            }
+            setTimeout(()=> {
+                const allInvoices = oView.getModel("AllInvoices").getData()
+                let filteredInc = allInvoices;
 
-            // filteredInc.sort((a, b) => new Date(b.date) - new Date(a.date));
-            const filteredModel = new sap.ui.model.json.JSONModel(filteredInc)
-            oView.setModel(filteredModel, "Invoices")
+                if (selectedStatus){
+                    filteredInc = filteredInc.filter(item => item.status===selectedStatus);
+                }
+                if (searchValue) {
+                    const query = searchValue.toLowerCase()
+                    filteredInc = filteredInc.filter(item => item.invoiceNumber && item.invoiceNumber.toLowerCase().includes(query))
+                }
+
+                // filteredInc.sort((a, b) => new Date(b.date) - new Date(a.date));
+                const filteredModel = new sap.ui.model.json.JSONModel(filteredInc)
+                oView.setBusy(false)
+                oView.setModel(filteredModel, "Invoices")
+            },1200)
+            
         }, 
         
 
