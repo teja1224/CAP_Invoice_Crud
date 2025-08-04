@@ -1,0 +1,11 @@
+<mvc:View controllerName="ns.invoiceui.controller.view2"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m">
+    <Page title="Invoice Details">
+        <ObjectHeader
+        title="{invoiceNumber}"
+        number="{amount}"
+        numberUnit="INR"
+        intro=""
+        />
+    </Page>

@@ -15,7 +15,7 @@ sap.ui.define([
             const oView = this.getView();
             oView.setBusy(true);
 
-            setTimeout(()=>{
+            setTimeout(() => {
                 const oModel = this.getOwnerComponent().getModel();
                 const mParameters = {
                     success: function (oData) {
@@ -34,7 +34,7 @@ sap.ui.define([
                         oView.setModel(oJSONModel, "AllInvoices");
 
                         const visibleModel = new sap.ui.model.json.JSONModel(oData.results);
-                        
+
                         oView.setModel(visibleModel, "Invoices");
                         oView.setBusy(false)
                     },
@@ -45,11 +45,11 @@ sap.ui.define([
                     }
                 };
                 oModel.read("/Invoices", mParameters);
-            },1200)
+            }, 1200)
 
 
             // const allfilters = []
-        
+
             // if (statusFilter) {
             //     allfilters.push(new sap.ui.model.Filter("status", "EQ", statusFilter));
             // }
@@ -59,19 +59,20 @@ sap.ui.define([
             // if(allfilters.length>0){
             //     mParameters.filters = [new sap.ui.model.Filter({ filters: allfilters, and:true})];
             // }
-        
-            
+
+
         },
-        clientfilter: function(selectedStatus,searchValue){
+
+        clientfilter: function (selectedStatus, searchValue) {
             const oView = this.getView();
             oView.setBusy(true)
 
-            setTimeout(()=> {
+            setTimeout(() => {
                 const allInvoices = oView.getModel("AllInvoices").getData()
                 let filteredInc = allInvoices;
 
-                if (selectedStatus){
-                    filteredInc = filteredInc.filter(item => item.status===selectedStatus);
+                if (selectedStatus) {
+                    filteredInc = filteredInc.filter(item => item.status === selectedStatus);
                 }
                 if (searchValue) {
                     const query = searchValue.toLowerCase()
@@ -82,51 +83,121 @@ sap.ui.define([
                 const filteredModel = new sap.ui.model.json.JSONModel(filteredInc)
                 oView.setBusy(false)
                 oView.setModel(filteredModel, "Invoices")
-            },1200)
-            
-        }, 
+            }, 1200)
+
+        },
+
+        onInvoicePress: function (oEvent) {
+            const oContext = oEvent.getParameter("listItem").getBindingContext("Invoices");
+            const invoiceData = oContext.getObject();
         
+            // We will implement navigation to View2 later
+            console.log("Invoice clicked:", invoiceData);
+        
+            // Example: store invoice ID for later navigation
+            this.getOwnerComponent().getRouter().navTo("invoiceDetails", {
+                invoiceId: invoiceData.ID
+            });
+        },
+
+        onAddItemRow: function () {
+            const oTable = sap.ui.getCore().byId("idItemsTable");
+            const oModel = oTable.getModel("itemsModel");
+            const aItems = oModel.getData();
+            aItems.push({ name: "", quantity: 0, price: 0, total: 0 });
+            oModel.setData(aItems);
+
+            this.updateInvoiceAmount(aItems)
+        },
+
+        onDeleteItemRow: function (oEvent) {
+            const oTable = sap.ui.getCore().byId("idItemsTable");
+            const oModel = oTable.getModel("itemsModel");
+            const aItems = oModel.getData();
+            const index = oTable.indexOfItem(oEvent.getSource().getParent());
+            aItems.splice(index, 1);
+            oModel.setData(aItems);
+
+            this.updateInvoiceAmount(aItems)
+        },
+
+        calculateItemTotal: function(data) {
+            const qty = parseFloat(data.quantity) || 0;
+            const price = parseFloat(data.price) || 0;
+            data.total = qty * price;
+        },
+        
+        updateInvoiceAmount: function(items){
+            const sum = items.reduce((acc, item) => acc + (parseFloat(item.total) || 0), 0)
+            const amountField = sap.ui.getCore().byId("idAmount");
+            if(amountField){
+                amountField.setValue(sum.toFixed(2));
+            }
+        },
+
+        onItemQuantityChange: function (oEvent) {
+            const value =oEvent.getSource().getValue();
+            const oContext = oEvent.getSource().getBindingContext("itemsModel");
+            // oEvent.getSource().getBindingContext("itemsModel").setProperty("quantity", value)
+            oContext.setProperty("quantity", value)
+            const data = oContext.getObject();
+            this.calculateItemTotal(data);
+
+            const items = oContext.getModel().getData();
+            this.updateInvoiceAmount(items)
+        },
+        
+        onItemPriceChange: function (oEvent) {
+            const value =oEvent.getSource().getValue();
+            const oContext = oEvent.getSource().getBindingContext("itemsModel");
+            oContext.setProperty("price", value)
+            const data = oContext.getObject();
+            this.calculateItemTotal(data);
+
+            const items = oContext.getModel().getData();
+            this.updateInvoiceAmount(items)
+            oContext.getModel().refresh();
+        },        
 
         onStatusFilter: function (oEvent) {
             const selectedStatus = oEvent.getSource().getSelectedKey();
             const searchValue = this.byId("invoiceSearch").getValue();
-            this.clientfilter(selectedStatus,searchValue);
+            this.clientfilter(selectedStatus, searchValue);
         },
 
-        onInvoiceSearch: function(oEvent){
+        onInvoiceSearch: function (oEvent) {
             const searchValue = oEvent.getSource().getValue();
             const statusValue = this.byId("statusFilter").getSelectedKey();
             this.clientfilter(statusValue, searchValue)
         },
 
-        onClearFilters: function(){
+        onClearFilters: function () {
             this.byId("invoiceSearch").setValue("");
             this.byId("statusFilter").setSelectedKey("");
             this.clientfilter()
         },
 
-        formatDateToLocal: function(dateObj) {
+        formatDateToLocal: function (dateObj) {
             const year = dateObj.getFullYear();
             const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
             const day = dateObj.getDate().toString().padStart(2, '0');
             return `${year}-${month}-${day}`;
-          },
-          
+        },
+
         //Mandatory fields
-        validateFields: function(dialogType) {
+        validateFields: function (dialogType) {
             const fieldIds = {
                 create: {
                     dialogId: "createDialog",
-                    fields:[
+                    fields: [
                         "idInvoiceNumber",
                         "idDate",
-                        "idDescription",
                         "idAmount",
                         "idStatus"
                     ]
                 },
                 update: {
-                    dialogId:"updateDialog",
+                    dialogId: "updateDialog",
                     fields: [
                         "updateDate",
                         "updateDescription",
@@ -135,24 +206,75 @@ sap.ui.define([
                     ]
                 }
             }
-            const {dialog, fields} = fieldIds[dialogType]
+            const { dialog, fields } = fieldIds[dialogType]
             let isValid = true
             fields.forEach((fieldId) => {
                 const control = sap.ui.getCore().byId(fieldId)
-                const value = control.getValue?control.getValue():control.getSelectedKey?.();
-
-                if(!value){
+                const value = control.getValue ? control.getValue() : control.getSelectedKey?.();
+                let messa = "This field is required"
+                if (!value) {
+                    if (fieldId=="idDate"){
+                        messa = "Please select date from date picker" 
+                    }
                     control.setValueState("Error")
-                    control.setValueStateText("This field is required");
-                    isValid=false;
+                    control.setValueStateText(messa);
+                    isValid = false;
                 }
-                else{
+                else {
                     control.setValueState("None");
                 }
             })
             return isValid;
         },
 
+        // onAmountLiveChange: function (oEvent) {
+        //     const oInput = oEvent.getSource();
+        //     const value = oInput.getValue();
+        
+        //     // Strict: only numbers and optional decimal, no + or -
+        //     const numberPattern = /^\d*\.?\d*$/;
+        
+        //     if (!numberPattern.test(value) || value.trim() === "") {
+        //         oInput.setValueState("Error");
+        //         oInput.setValueStateText("Only numeric values are allowed");
+        //     } else {
+        //         oInput.setValueState("None");
+        //     }
+        // },
+
+        clearErrorValueStates: function (dialogType) {
+            const fieldIds = {
+                create: [
+                    "idInvoiceNumber",
+                    "idDate",
+                    "idAmount",
+                    "idStatus"
+                ],
+                update: [
+                    "updateDate",
+                    "updateDescription",
+                    "updateAmount",
+                    "updateStatus"
+                ]
+            };
+        
+            fieldIds[dialogType].forEach((fieldId) => {
+                const control = sap.ui.getCore().byId(fieldId);
+                if (control && control.setValueState) {
+                    control.setValueState("None");
+                }
+            });
+        },
+        
+        datePickerInputDisable: function (dateId) {
+            const oDatePicker = sap.ui.getCore().byId(dateId);
+            if (oDatePicker) {
+                const input = oDatePicker.$().find("input");
+                input.on("keydown", function (e) {
+                    e.preventDefault()
+                })
+            }
+        },
         onOpenCreateDialog: function () {
 
             const view = this.getView();
@@ -164,14 +286,22 @@ sap.ui.define([
                 }).then(function (oDialog) {
                     view.addDependent(oDialog);
                     this.clearDialogInput();
-                    const datePicker = oDialog.getContent()[0].getItems().find(item => item.getId().includes("idDate"));
+                    // this.createDialog.getModel("itemModel").setData([])
+                    //initialize items
+                    const itemsModel = new sap.ui.model.json.JSONModel([]);
+                    oDialog.setModel(itemsModel, "itemsModel");
+
+                    const datePicker = sap.ui.getCore().byId("idDate");
                     datePicker.setMaxDate(new Date());
+
                     oDialog.open();
+                    this.datePickerInputDisable("idDate");
                     this.createDialog = oDialog;
                 }.bind(this));
             } else {
-                this.clearDialogInput()
+                // this.createDialog.getModel("itemModel").setData([]);
                 this.createDialog.open();
+                this.datePickerInputDisable("idDate");
             }
         },
 
@@ -179,32 +309,56 @@ sap.ui.define([
             sap.ui.getCore().byId("idInvoiceNumber").setValue("")
             sap.ui.getCore().byId("idDate").setValue("")
             sap.ui.getCore().byId("idAmount").setValue("")
-            sap.ui.getCore().byId("idDescription").setValue("");
             sap.ui.getCore().byId("idStatus").setSelectedKey("Pending");
         },
 
         onCreateSubmit: function () {
-            if (!this.validateFields("create")){
+            if (!this.validateFields("create")) {
                 MessageToast.show("Please fill in all fields.")
                 return;
             }
             const oDialog = this.createDialog;
+
             const oDatePicker = sap.ui.getCore().byId("idDate");
             const selectedDate = oDatePicker.getDateValue();
-            // Validation: check if date is selected
+            // check if date is selected
             if (!selectedDate) {
                 oDatePicker.setValueState("Error");
-                oDatePicker.setValueStateText("Please select a valid date.");
-                MessageToast.show("Please select date from DatePicker");
+                oDatePicker.setValueStateText("Please select date from DatePicker");
                 return;
             }
 
+            const itemsData = oDialog.getModel("itemsModel").getData();
+            if (!itemsData || itemsData.length === 0) {
+                MessageBox.error("Please add atleast one item for this invoice.")
+                return
+            }
+            let allItemsValid = true
+            itemsData.forEach((item, index) => {
+                if(!item.name || item.name.trim() === "") {
+                    allItemsValid=false
+                    MessageBox.error(`Item ${index + 1}: Name is required.`)
+                    return
+                }
+                if (!item.quantity || isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+                    allItemsValid = false;
+                    MessageBox.error(`Item ${index + 1}: Please enter a valid quantity.`);
+                    return;
+                }
+                if (isNaN(item.price) || parseFloat(item.price) <= 0) {
+                    allItemsValid = false;
+                    MessageBox.error(`Item ${index + 1}: Please enter a valid price.`);
+                    return;
+                }
+            });
+
+            if (!allItemsValid) return;
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("idInvoiceNumber").getValue(),
-                date: oDatePicker.getValue(), 
+                date: oDatePicker.getValue(),
                 amount: parseFloat(sap.ui.getCore().byId("idAmount").getValue()),
-                description: sap.ui.getCore().byId("idDescription").getValue(),
-                status: sap.ui.getCore().byId("idStatus").getSelectedKey()
+                status: sap.ui.getCore().byId("idStatus").getSelectedKey(),
+                items: itemsData
             };
             const oModel = this.getView().getModel()
 
@@ -218,7 +372,7 @@ sap.ui.define([
                 },
                 error: (oError) => {
                     let message = "Create failed";
-    
+
                     if (oError && oError.responseText) {
                         try {
                             const errorObj = JSON.parse(oError.responseText);
@@ -226,7 +380,7 @@ sap.ui.define([
                         } catch (e) {
                         }
                     }
-        
+
                     MessageBox.error(message);
                     // this.clearDialogInput()
                 }
@@ -235,10 +389,12 @@ sap.ui.define([
 
         onCreateCancel: function () {
             this.createDialog.close();
+            this.clearErrorValueStates("create")
         },
 
         //Work on Update Invoice
-        onOpenUpdateDialog: function (oEvent) {
+
+        onOpenUpdateDialog: function(oEvent) {
             const oContext = oEvent.getSource().getParent().getBindingContext("Invoices");
             const data = oContext.getObject();
             this.editPath = data.editPath;
@@ -250,19 +406,24 @@ sap.ui.define([
                     controller: this
                 }).then(function (oDialog) {
                     view.addDependent(oDialog);
-                    this._bindUpdateFields(data);
-                    const datePicker = oDialog.getContent()[0].getItems().find(item => item.getId().includes("updateDate"));
+                    this.bindUpdateFields(data);
+
+                    const datePicker = sap.ui.getCore().byId("updateDate");
                     datePicker.setMaxDate(new Date());
                     oDialog.open();
+                    this.datePickerInputDisable("updateDate");
                     this.updateDialog = oDialog;
                 }.bind(this));
             } else {
-                this._bindUpdateFields(data);
+                
+                this.bindUpdateFields(data);
                 this.updateDialog.open();
+                this.datePickerInputDisable("updateDate");
+               
             }
         },
 
-        _bindUpdateFields: function (data) {
+        bindUpdateFields: function (data) {
             sap.ui.getCore().byId("updateInvoiceNumber").setValue(data.invoiceNumber || "");
             if (data.date) {
                 sap.ui.getCore().byId("updateDate").setDateValue(new Date(data.date));
@@ -273,9 +434,9 @@ sap.ui.define([
             sap.ui.getCore().byId("updateDescription").setValue(data.description || "");
             sap.ui.getCore().byId("updateStatus").setSelectedKey(data.status || "Pending");
         },
-        
+
         onUpdateSubmit: function () {
-            if(!this.validateFields("update")){
+            if (!this.validateFields("update")) {
                 MessageToast.show("Please fill in all fields")
                 return;
             }
@@ -288,7 +449,7 @@ sap.ui.define([
                 MessageToast.show("Please select date from DatePicker");
                 return;
             }
-            if (selectedDate>new Date()){
+            if (selectedDate > new Date()) {
                 oDatePicker.setValueState("Error");
                 oDatePicker.setValueStateText("Future dates are not allowed.");
                 MessageToast.show("Future dates are not allowed.");
@@ -299,7 +460,6 @@ sap.ui.define([
                 invoiceNumber: sap.ui.getCore().byId("updateInvoiceNumber").getValue(),
                 date: this.formatDateToLocal(selectedDate),
                 amount: parseFloat(sap.ui.getCore().byId("updateAmount").getValue()),
-                description: sap.ui.getCore().byId("updateDescription").getValue(),
                 status: sap.ui.getCore().byId("updateStatus").getSelectedKey()
             };
             const oModel = this.getView().getModel();
@@ -313,7 +473,7 @@ sap.ui.define([
                 },
                 error: (oError) => {
                     let message = "Update failed";
-    
+
                     if (oError && oError.responseText) {
                         try {
                             const errorObj = JSON.parse(oError.responseText);
@@ -321,7 +481,7 @@ sap.ui.define([
                         } catch (e) {
                         }
                     }
-        
+
                     MessageBox.error(message);
                 }
             })
@@ -329,6 +489,7 @@ sap.ui.define([
 
         onUpdateCancel: function () {
             this.updateDialog.close();
+            this.clearErrorValueStates("update")
         },
 
         onDelete: function (oEvent) {
