@@ -100,54 +100,54 @@ sap.ui.define([
             });
         },
 
-        onAddItemRow: function () {
-            const oTable = sap.ui.getCore().byId("idItemsTable");
-            const oModel = oTable.getModel("itemsModel");
+        //Items work
+
+        onAddItemRow: function (oEvent) {
+            const dialogType = oEvent.getSource().data("dialogType")
+            const tableId = dialogType === "create" ? "idItemsTable" : "updateItemsTable"
+
+            
+            // const oTable = sap.ui.getCore().byId("idItemsTable");
+            const oTable = sap.ui.getCore().byId(tableId)
+            const oModel = oTable.getModel("itemsModel"); 
             const aItems = oModel.getData();
             aItems.push({ name: "", quantity: 0, price: 0, total: 0 });
-            oModel.setData(aItems);
+            oModel.setData(aItems, dialogType);
 
             this.updateInvoiceAmount(aItems)
         },
 
         onDeleteItemRow: function (oEvent) {
-            const oTable = sap.ui.getCore().byId("idItemsTable");
+            const dialogType = oEvent.getSource().data("dialogType")
+            const tableId = dialogType === "create" ? "idItemsTable" : "updateItemsTable"
+
+            const oTable = sap.ui.getCore().byId(tableId);
             const oModel = oTable.getModel("itemsModel");
             const aItems = oModel.getData();
             const index = oTable.indexOfItem(oEvent.getSource().getParent());
-            aItems.splice(index, 1);
-            oModel.setData(aItems);
-
-            this.updateInvoiceAmount(aItems)
-        },
-
-        calculateItemTotal: function(data) {
-            const qty = parseFloat(data.quantity) || 0;
-            const price = parseFloat(data.price) || 0;
-            data.total = qty * price;
+            MessageBox.confirm("Are you sure you want to delete this item?", {
+                title: "Confirm Deletion",
+                onClose: function (oAction) {
+                    if (oAction === "OK") {
+                            aItems.splice(index, 1)
+                            oModel.setData(aItems);
+                            this.updateInvoiceAmount(aItems, dialogType)
+                        };
+                    }
+                });
         },
         
-        updateInvoiceAmount: function(items){
+        updateInvoiceAmount: function(items, dialogType){
+            const amountId = dialogType === "create" ? "idAmount" : "updateAmount"
             const sum = items.reduce((acc, item) => acc + (parseFloat(item.total) || 0), 0)
-            const amountField = sap.ui.getCore().byId("idAmount");
+            const amountField = sap.ui.getCore().byId(amountId);
             if(amountField){
                 amountField.setValue(sum.toFixed(2));
             }
         },
-
-        onItemQuantityChange: function (oEvent) {
-            const value =oEvent.getSource().getValue();
-            const oContext = oEvent.getSource().getBindingContext("itemsModel");
-            // oEvent.getSource().getBindingContext("itemsModel").setProperty("quantity", value)
-            oContext.setProperty("quantity", value)
-            const data = oContext.getObject();
-            this.calculateItemTotal(data);
-
-            const items = oContext.getModel().getData();
-            this.updateInvoiceAmount(items)
-        },
         
         onItemPriceChange: function (oEvent) {
+            const dialogType = oEvent.getSource().data("dialogType")
             const value =oEvent.getSource().getValue();
             const oContext = oEvent.getSource().getBindingContext("itemsModel");
             oContext.setProperty("price", value)
@@ -155,9 +155,33 @@ sap.ui.define([
             this.calculateItemTotal(data);
 
             const items = oContext.getModel().getData();
-            this.updateInvoiceAmount(items)
+            this.updateInvoiceAmount(items, dialogType)
             oContext.getModel().refresh();
-        },        
+        },
+
+        onItemQuantityChange: function (oEvent) {
+            const dialogType = oEvent.getSource().data("dialogType")
+            const value =oEvent.getSource().getValue();
+            const oContext = oEvent.getSource().getBindingContext("itemsModel");
+            // oEvent.getSource().getBindingContext("itemsModel").setProperty("quantity", value)
+            oContext.setProperty("quantity", value)
+            const data = oContext.getObject();
+            const price = parseFloat(data.price) || 0;
+            data.price = price.toFixed(2);
+
+            this.calculateItemTotal(data);
+            const items = oContext.getModel().getData();
+            this.updateInvoiceAmount(items, dialogType)
+        },
+
+        calculateItemTotal: function(data) {
+            const qty = parseFloat(data.quantity) || 0;
+            const price = parseFloat(data.price) || 0;
+            // data.price = price.toFixed(2)
+            data.total = (qty * price).toFixed(2);
+        },
+
+        //filtering & searching
 
         onStatusFilter: function (oEvent) {
             const selectedStatus = oEvent.getSource().getSelectedKey();
@@ -400,27 +424,34 @@ sap.ui.define([
             this.editPath = data.editPath;
 
             const view = this.getView();
-            if (!this.updateDialog) {
-                Fragment.load({
-                    name: "ns.invoiceui.fragment.UpdateInvoice",
-                    controller: this
-                }).then(function (oDialog) {
-                    view.addDependent(oDialog);
-                    this.bindUpdateFields(data);
-
-                    const datePicker = sap.ui.getCore().byId("updateDate");
-                    datePicker.setMaxDate(new Date());
-                    oDialog.open();
-                    this.datePickerInputDisable("updateDate");
-                    this.updateDialog = oDialog;
-                }.bind(this));
-            } else {
-                
-                this.bindUpdateFields(data);
-                this.updateDialog.open();
-                this.datePickerInputDisable("updateDate");
-               
-            }
+            const model = view.getModel();
+            model.read(`/Invoices(${data.ID})`, {
+                urlParameters: { "$expand":"items" },
+                success: (oData) => {
+                    if (!this.updateDialog) {
+                        Fragment.load({
+                            name: "ns.invoiceui.fragment.UpdateInvoice",
+                            controller: this
+                        }).then(function (oDialog) {
+                            view.addDependent(oDialog);
+                            this.bindUpdateFields(oData);
+        
+                            const datePicker = sap.ui.getCore().byId("updateDate");
+                            datePicker.setMaxDate(new Date());
+                            
+                            oDialog.open();
+                            this.datePickerInputDisable("updateDate");
+                            this.updateDialog = oDialog;
+                        }.bind(this));
+                    } else {
+                        
+                        this.bindUpdateFields(oData);
+                        this.updateDialog.open();
+                        this.datePickerInputDisable("updateDate");
+                       
+                    }
+                }
+            })
         },
 
         bindUpdateFields: function (data) {
@@ -431,8 +462,11 @@ sap.ui.define([
                 sap.ui.getCore().byId("updateDate").setValue("");
             }
             sap.ui.getCore().byId("updateAmount").setValue(data.amount || "");
-            sap.ui.getCore().byId("updateDescription").setValue(data.description || "");
             sap.ui.getCore().byId("updateStatus").setSelectedKey(data.status || "Pending");
+
+            //items
+            const itemModel = new sap.ui.model.json.JSONModel(data.items.results || []);
+            sap.ui.getCore().byId("updateItemsTable").setModel(itemModel, "itemsModel");
         },
 
         onUpdateSubmit: function () {

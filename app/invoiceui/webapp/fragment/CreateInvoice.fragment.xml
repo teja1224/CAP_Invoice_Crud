@@ -28,9 +28,20 @@
                 id="idDate"
                 valueFormat="yyyy-MM-dd"
                 required="true"
+                class="sapUiSmallMarginBottom"
             />
-
-            <Label text="Invoice Items" required="true"/>
+            <Toolbar>
+            <Title text="Invoice Items"/>
+            <ToolbarSpacer/>
+            <Button text="Add Item"
+                press="onAddItemRow"
+                type="Emphasized"
+                >
+                <customData>
+                    <core:CustomData key="dialogType" value="create"/>
+                </customData>
+            </Button>
+            </Toolbar>
             <Table id="idItemsTable" inset="false" items="{itemsModel>/}" noDataText="Click 'Add Item' to insert items">
             <columns>
                 <Column><Text text="Name"/></Column>
@@ -43,20 +54,32 @@
                 <ColumnListItem>
                 <cells>
                     <Input value="{itemsModel>name}" placeholder="Item Name"/>
-                    <Input value="{itemsModel>price}" type="Number" liveChange="onItemPriceChange"/>
-                    <Input value="{itemsModel>quantity}" type="Number" liveChange="onItemQuantityChange"/>
+                    <Input value="{itemsModel>price}" type="Number" liveChange="onItemPriceChange" >
+                        <customData>
+                            <core:CustomData key="dialogType" value="create"/>
+                        </customData>
+                    </Input>
+                    <Input value="{itemsModel>quantity}" type="Number" liveChange="onItemQuantityChange">
+                        <customData>
+                            <core:CustomData key="dialogType" value="create"/>
+                        </customData>
+                    </Input>
                     <Text text="{itemsModel>total}" />
-                    <Button icon="sap-icon://delete" press="onDeleteItemRow"/>
+                    <Button icon="sap-icon://delete" press="onDeleteItemRow" type="Reject">
+                        <customData>
+                            <core:CustomData key="dialogType" value="create" />
+                        </customData>
+                    </Button>
                 </cells>
                 </ColumnListItem>
             </items>
             </Table>
-<Button text="Add Item" press="onAddItemRow"/>
 
 
             <Label
                 text="Amount"
                 required="true"
+                class="sapUiSmallMarginTop"
             />
             <Input
                 id="idAmount"
@@ -90,6 +113,7 @@
             <Button
                 text="Submit"
                 press="onCreateSubmit"
+                type="Emphasized"
             />
         </beginButton>
         <endButton>

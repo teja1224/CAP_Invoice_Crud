@@ -58,6 +58,7 @@
                     text="Create Invoice"
                     press="onOpenCreateDialog"
                     icon="sap-icon://add"
+                    type="Emphasized"
                 />
             </Toolbar>
 
@@ -104,9 +105,10 @@
                                     press="onOpenUpdateDialog"
                                 />
                                 <Button
-                                    class="sapUiTinyMarginBegin"
+                                    class="sapUiSmallMarginBegin"
                                     icon="sap-icon://delete"
                                     press="onDelete"
+                                    type="Reject"
                                 />
                             </HBox>
                         </cells>
