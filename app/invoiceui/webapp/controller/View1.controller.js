@@ -318,6 +318,9 @@ sap.ui.define([
                     const datePicker = sap.ui.getCore().byId("idDate");
                     datePicker.setMaxDate(new Date());
 
+                    const amount = sap.ui.getCore().byId("idAmount")
+                    amount.setValue(0.00)
+
                     oDialog.open();
                     this.datePickerInputDisable("idDate");
                     this.createDialog = oDialog;
@@ -334,6 +337,34 @@ sap.ui.define([
             sap.ui.getCore().byId("idDate").setValue("")
             sap.ui.getCore().byId("idAmount").setValue("")
             sap.ui.getCore().byId("idStatus").setSelectedKey("Pending");
+        },
+
+        //validate items table
+        validateItems: function(itemsData) {
+            let allItemsValid = true
+            if (!itemsData || itemsData.length === 0) {
+                allItemsValid = false
+                MessageBox.error("Please add atleast one item for this invoice.")
+                return allItemsValid
+            }
+            
+            itemsData.forEach((item, index) => {
+                if(!item.name || item.name.trim() === "") {
+                    allItemsValid=false
+                    MessageBox.error(`Item ${index + 1}: Name is required.`)
+                    return allItemsValid
+                }
+                if (!item.quantity || isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+                    allItemsValid = false;
+                    MessageBox.error(`Item ${index + 1}: Please enter a valid quantity.`);
+                    return allItemsValid
+                }
+                if (isNaN(item.price) || parseFloat(item.price) <= 0) {
+                    allItemsValid = false;
+                    MessageBox.error(`Item ${index + 1}: Please enter a valid price.`);
+                    return allItemsValid;
+                }
+            });
         },
 
         onCreateSubmit: function () {
@@ -353,30 +384,9 @@ sap.ui.define([
             }
 
             const itemsData = oDialog.getModel("itemsModel").getData();
-            if (!itemsData || itemsData.length === 0) {
-                MessageBox.error("Please add atleast one item for this invoice.")
-                return
-            }
-            let allItemsValid = true
-            itemsData.forEach((item, index) => {
-                if(!item.name || item.name.trim() === "") {
-                    allItemsValid=false
-                    MessageBox.error(`Item ${index + 1}: Name is required.`)
-                    return
-                }
-                if (!item.quantity || isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
-                    allItemsValid = false;
-                    MessageBox.error(`Item ${index + 1}: Please enter a valid quantity.`);
-                    return;
-                }
-                if (isNaN(item.price) || parseFloat(item.price) <= 0) {
-                    allItemsValid = false;
-                    MessageBox.error(`Item ${index + 1}: Please enter a valid price.`);
-                    return;
-                }
-            });
+            const valid = this.validateItems(itemsData)
+            if (!valid) return;
 
-            if (!allItemsValid) return;
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("idInvoiceNumber").getValue(),
                 date: oDatePicker.getValue(),
