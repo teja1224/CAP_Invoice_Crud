@@ -112,9 +112,9 @@ sap.ui.define([
             const oModel = oTable.getModel("itemsModel"); 
             const aItems = oModel.getData();
             aItems.push({ name: "", quantity: 0, price: 0, total: 0 });
-            oModel.setData(aItems, dialogType);
+            oModel.setData(aItems);
 
-            this.updateInvoiceAmount(aItems)
+            this.updateInvoiceAmount(aItems,dialogType)
         },
 
         onDeleteItemRow: function (oEvent) {
@@ -125,13 +125,14 @@ sap.ui.define([
             const oModel = oTable.getModel("itemsModel");
             const aItems = oModel.getData();
             const index = oTable.indexOfItem(oEvent.getSource().getParent());
+            const that = this
             MessageBox.confirm("Are you sure you want to delete this item?", {
                 title: "Confirm Deletion",
                 onClose: function (oAction) {
                     if (oAction === "OK") {
                             aItems.splice(index, 1)
                             oModel.setData(aItems);
-                            this.updateInvoiceAmount(aItems, dialogType)
+                            that.updateInvoiceAmount(aItems, dialogType)
                         };
                     }
                 });
@@ -224,7 +225,6 @@ sap.ui.define([
                     dialogId: "updateDialog",
                     fields: [
                         "updateDate",
-                        "updateDescription",
                         "updateAmount",
                         "updateStatus"
                     ]
@@ -365,6 +365,7 @@ sap.ui.define([
                     return allItemsValid;
                 }
             });
+            return allItemsValid;
         },
 
         onCreateSubmit: function () {
@@ -477,6 +478,8 @@ sap.ui.define([
             //items
             const itemModel = new sap.ui.model.json.JSONModel(data.items.results || []);
             sap.ui.getCore().byId("updateItemsTable").setModel(itemModel, "itemsModel");
+
+            // this.updateDialog.setModel(itemModel, "itemsModel");
         },
 
         onUpdateSubmit: function () {
@@ -493,18 +496,25 @@ sap.ui.define([
                 MessageToast.show("Please select date from DatePicker");
                 return;
             }
-            if (selectedDate > new Date()) {
-                oDatePicker.setValueState("Error");
-                oDatePicker.setValueStateText("Future dates are not allowed.");
-                MessageToast.show("Future dates are not allowed.");
-                return;
-            }
+            // if (selectedDate > new Date()) {
+            //     oDatePicker.setValueState("Error");
+            //     oDatePicker.setValueStateText("Future dates are not allowed.");
+            //     MessageToast.show("Future dates are not allowed.");
+            //     return;
+            // }
+
+            //items
+            // const itemsData = this.updateDialog.getModel("itemsModel").getData();
+            const itemsData = sap.ui.getCore().byId("updateItemsTable").getModel("itemsModel").getData();
+            const valid = this.validateItems(itemsData)
+            if(!valid) return;
 
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("updateInvoiceNumber").getValue(),
                 date: this.formatDateToLocal(selectedDate),
                 amount: parseFloat(sap.ui.getCore().byId("updateAmount").getValue()),
-                status: sap.ui.getCore().byId("updateStatus").getSelectedKey()
+                status: sap.ui.getCore().byId("updateStatus").getSelectedKey(),
+                items:itemsData
             };
             const oModel = this.getView().getModel();
 
