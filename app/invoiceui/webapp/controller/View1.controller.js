@@ -87,15 +87,15 @@ sap.ui.define([
 
         },
 
+        //object items page for an invoice
         onInvoicePress: function (oEvent) {
             const oContext = oEvent.getParameter("listItem").getBindingContext("Invoices");
             const invoiceData = oContext.getObject();
+
+            // console.log("Invoice clicked:", invoiceData);
         
-            // We will implement navigation to View2 later
-            console.log("Invoice clicked:", invoiceData);
-        
-            // Example: store invoice ID for later navigation
-            this.getOwnerComponent().getRouter().navTo("invoiceDetails", {
+            const oRouter = sap.ui.core.UIComponent.getRouterFor(this);
+            oRouter.navTo("invoiceDetails", {
                 invoiceId: invoiceData.ID
             });
         },

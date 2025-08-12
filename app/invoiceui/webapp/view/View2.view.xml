@@ -1,11 +1,53 @@
-<mvc:View controllerName="ns.invoiceui.controller.view2"
+<mvc:View
+    controllerName="ns.invoiceui.controller.View2"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m">
-    <Page title="Invoice Details">
-        <ObjectHeader
-        title="{invoiceNumber}"
-        number="{amount}"
-        numberUnit="INR"
-        intro=""
-        />
+
+    <Page title="Invoice Number - {invoiceModel>/invoiceNumber}" showNavButton="true" navButtonPress=".onNavBack">
+        <VBox class="sapUiSmallMargin">
+
+            <!-- Invoice Info -->
+            <VBox  class="sapUiSmallMarginBottom">
+                <HBox>
+                    <Label text="Amount : " />
+                    <ObjectNumber
+                            number="{invoiceModel>/amount}"
+                            unit="INR"
+                            state="{= ${invoiceModel>/status} === 'Paid' ? 'Success' : 'Error'}"
+                    />
+                </HBox>
+                <HBox>
+                    <Label text="Status : " />
+                    <ObjectStatus
+                        text="{invoiceModel>/status}"
+                        state="{= ${invoiceModel>/status} === 'Paid' ? 'Success' : 'Warning'}" />
+                </HBox>
+                <HBox>
+                    <Label text="Date : " />
+                    <Text text="{invoiceModel>/dateFormatted}" />
+                </HBox>
+            </VBox>
+
+            <Title text="Invocie Items" class="sapUiSmallMarginTop sapUiSmallMarginBottom"></Title>
+            <Table items="{itemsModel>/}" >
+                <columns>
+                    <Column><Text text="Item Name"/></Column>
+                    <Column><Text text="Quantity"/></Column>
+                    <Column><Text text="Price"/></Column>
+                    <Column><Text text="Total"/></Column>
+                </columns>
+                <items>
+                    <ColumnListItem>
+                        <cells>
+                            <Text text="{itemsModel>name}" />
+                            <Text text="{itemsModel>quantity}" />
+                            <Text text="{itemsModel>price}" />
+                            <Text text="{itemsModel>total}" />
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+
+        </VBox>
     </Page>
+</mvc:View>
