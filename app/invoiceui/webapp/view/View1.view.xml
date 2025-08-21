@@ -100,10 +100,10 @@
                                 state="{= ${Invoices>status} === 'Paid' ? 'Success' : 'Warning'}"
                             />
                             <HBox>
-                                <Button
+                                <!-- <Button
                                     icon="sap-icon://edit"
                                     press="onOpenUpdateDialog"
-                                />
+                                /> -->
                                 <Button
                                     class="sapUiSmallMarginBegin"
                                     icon="sap-icon://delete"

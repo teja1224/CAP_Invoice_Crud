@@ -9,6 +9,8 @@ sap.ui.define([
     return Controller.extend("ns.invoiceui.controller.View1", {
         onInit() {
             this.onRead();
+            const bus = sap.ui.getCore().getEventBus();
+            bus.subscribe("Invoices", "Reload", this.onRead, this);
         },
 
         onRead: function () {
@@ -112,7 +114,7 @@ sap.ui.define([
             const oTable = sap.ui.getCore().byId(tableId)
             const oModel = oTable.getModel("itemsModel"); 
             const aItems = oModel.getData();
-            aItems.push({ name: "", quantity: 0, price: 0, total: 0 });
+            aItems.push({ name: "", quantity: null, price: null, total: 0 });
             oModel.setData(aItems);
 
             this.updateInvoiceAmount(aItems,dialogType)
@@ -301,37 +303,56 @@ sap.ui.define([
             }
         },
         onOpenCreateDialog: function () {
-
             const view = this.getView();
+            const oModel = this.getView().getModel();
 
-            if (!this.createDialog) {
-                Fragment.load({
-                    name: "ns.invoiceui.fragment.CreateInvoice",
-                    controller: this
-                }).then(function (oDialog) {
-                    view.addDependent(oDialog);
-                    this.clearDialogInput();
-                    // this.createDialog.getModel("itemModel").setData([])
-                    //initialize items
-                    const itemsModel = new sap.ui.model.json.JSONModel([]);
-                    oDialog.setModel(itemsModel, "itemsModel");
+            oModel.callFunction("/getNextInvoiceNumber", {
+                method: "GET",
+                success: function (oData) {
+                    const nextInvoiceNumber = JSON.parse(oData.getNextInvoiceNumber);
+                    var oCreateModel = new sap.ui.model.json.JSONModel({
+                        invoiceNumber: nextInvoiceNumber, // Pre-fill invoice number
+                        date: this.formatDateToLocal(new Date()),           // Optional: prefill today's date
+                        amount: "",
+                        customer_ID: ""
+                    });
+                
+                    if (!this.createDialog) {
+                        Fragment.load({
+                            name: "ns.invoiceui.fragment.CreateInvoice",
+                            controller: this
+                        }).then(function (oDialog) {
+                            view.addDependent(oDialog);
+                            // this.clearDialogInput();
 
-                    const datePicker = sap.ui.getCore().byId("idDate");
-                    datePicker.setMaxDate(new Date());
+                            oDialog.setModel(oCreateModel, "createData");
+                            // Initialize items model
+                            const itemsModel = new sap.ui.model.json.JSONModel([]);
+                            oDialog.setModel(itemsModel, "itemsModel");
 
-                    const amount = sap.ui.getCore().byId("idAmount")
-                    amount.setValue(0.00)
+                            const datePicker = sap.ui.getCore().byId("idDate");
+                            datePicker.setMaxDate(new Date());
 
-                    oDialog.open();
-                    this.datePickerInputDisable("idDate");
-                    this.createDialog = oDialog;
-                }.bind(this));
-            } else {
-                // this.createDialog.getModel("itemModel").setData([]);
-                this.createDialog.open();
-                this.datePickerInputDisable("idDate");
-            }
+                            const amount = sap.ui.getCore().byId("idAmount");
+                            amount.setValue(0.00);
+
+                            oDialog.open();
+                            this.datePickerInputDisable("idDate");
+                            this.createDialog = oDialog;
+                        }.bind(this));
+                    } else {
+                        sap.ui.getCore().byId("idInvoiceNumber").setValue(nextInvoiceNumber);
+                        this.createDialog.open();
+                        this.datePickerInputDisable("idDate");
+                    }
+
+                }.bind(this),
+                error: function () {
+                    MessageToast.show("Failed to get next invoice number from server");
+                }
+            });
         },
+
 
         clearDialogInput: function () {
             sap.ui.getCore().byId("idInvoiceNumber").setValue("")
@@ -440,13 +461,27 @@ sap.ui.define([
             model.read(`/Invoices(${data.ID})`, {
                 urlParameters: { "$expand":"items" },
                 success: (oData) => {
+
+                    if (oData.date) {
+                        const rawDate = new Date(oData.date);
+                        oData.dateFormatted = rawDate.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric"
+                        });
+                    }
+                    const oInvoiceModel = new sap.ui.model.json.JSONModel(oData);
+                    const oItemsModel = new sap.ui.model.json.JSONModel(oData.items.results)
+
                     if (!this.updateDialog) {
                         Fragment.load({
                             name: "ns.invoiceui.fragment.UpdateInvoice",
                             controller: this
                         }).then(function (oDialog) {
                             view.addDependent(oDialog);
-                            this.bindUpdateFields(oData);
+
+                            oDialog.setModel(oInvoiceModel, "invoice");
+                            oDialog.setModel(oItemsModel, "itemsModel")
         
                             const datePicker = sap.ui.getCore().byId("updateDate");
                             datePicker.setMaxDate(new Date());
@@ -457,7 +492,8 @@ sap.ui.define([
                         }.bind(this));
                     } else {
                         
-                        this.bindUpdateFields(oData);
+                        this.updateDialog.setModel(oInvoiceModel, "invoice");
+                        this.updateDialog.setModel(oItemsModel, "itemsModel")
                         this.updateDialog.open();
                         this.datePickerInputDisable("updateDate");
                        
@@ -466,22 +502,22 @@ sap.ui.define([
             })
         },
 
-        bindUpdateFields: function (data) {
-            sap.ui.getCore().byId("updateInvoiceNumber").setValue(data.invoiceNumber || "");
-            if (data.date) {
-                sap.ui.getCore().byId("updateDate").setDateValue(new Date(data.date));
-            } else {
-                sap.ui.getCore().byId("updateDate").setValue("");
-            }
-            sap.ui.getCore().byId("updateAmount").setValue(data.amount || "");
-            sap.ui.getCore().byId("updateStatus").setSelectedKey(data.status || "Pending");
+        // bindUpdateFields: function (data) {
+        //     sap.ui.getCore().byId("updateInvoiceNumber").setValue(data.invoiceNumber);
+        //     if (data.date) {
+        //         sap.ui.getCore().byId("updateDate").setDateValue(new Date(data.date));
+        //     } else {
+        //         sap.ui.getCore().byId("updateDate").setValue("");
+        //     }
+        //     sap.ui.getCore().byId("updateAmount").setValue(data.amount || "");
+        //     sap.ui.getCore().byId("updateStatus").setSelectedKey(data.status || "Pending");
 
-            //items
-            const itemModel = new sap.ui.model.json.JSONModel(data.items.results || []);
-            sap.ui.getCore().byId("updateItemsTable").setModel(itemModel, "itemsModel");
+        //     //items
+        //     const itemModel = new sap.ui.model.json.JSONModel(data.items.results || []);
+        //     sap.ui.getCore().byId("updateItemsTable").setModel(itemModel, "itemsModel");
 
-            // this.updateDialog.setModel(itemModel, "itemsModel");
-        },
+        //     // this.updateDialog.setModel(itemModel, "itemsModel");
+        // },
 
         onUpdateSubmit: function () {
             if (!this.validateFields("update")) {
@@ -490,13 +526,13 @@ sap.ui.define([
             }
             const oDatePicker = sap.ui.getCore().byId("updateDate");
             const selectedDate = oDatePicker.getDateValue();
-            // Validation: check if date is selected
-            if (!selectedDate) {
-                oDatePicker.setValueState("Error");
-                oDatePicker.setValueStateText("Please select a valid date.");
-                MessageToast.show("Please select date from DatePicker");
-                return;
-            }
+            // // Validation: check if date is selected
+            // if (!selectedDate) {
+            //     oDatePicker.setValueState("Error");
+            //     oDatePicker.setValueStateText("Please select a valid date.");
+            //     MessageToast.show("Please select date from DatePicker");
+            //     return;
+            // }
             // if (selectedDate > new Date()) {
             //     oDatePicker.setValueState("Error");
             //     oDatePicker.setValueStateText("Future dates are not allowed.");

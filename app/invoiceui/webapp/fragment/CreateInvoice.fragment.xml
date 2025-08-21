@@ -17,7 +17,9 @@
             />
             <Input
                 id="idInvoiceNumber"
+                value="{createData>/invoiceNumber}"
                 required="true"
+                editable="false"
             />
 
             <Label
@@ -26,6 +28,7 @@
             />
             <DatePicker
                 id="idDate"
+                value="{createData>/date}"
                 valueFormat="yyyy-MM-dd"
                 required="true"
                 class="sapUiSmallMarginBottom"

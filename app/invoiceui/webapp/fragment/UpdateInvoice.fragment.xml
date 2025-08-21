@@ -2,17 +2,17 @@
   <Dialog id="updateDialog" title="Update Invoice" draggable="true" resizable="true" contentWidth="750px" contentHeight="450px">
     <VBox class="sapUiSmallMargin">
       <Label text="Invoice Number"/>
-      <Input id="updateInvoiceNumber" editable="false" />
+      <Input id="updateInvoiceNumber" editable="false" value="{invoice>/invoiceNumber}"/>
 
       <Label text="Date" required="true"/>
-      <DatePicker valueFormat="yyyy-MM-dd" id="updateDate" change="onDateChange" required="true"/>
+      <DatePicker valueFormat="yyyy-MM-dd" id="updateDate" change="onDateChange" required="true" value="{invoice>/dateFormatted}"/>
 
 
       <Label text="Amount" required="true"/>
-      <Input id="updateAmount" type="Number" required="true" editable="false"/>
+      <Input id="updateAmount" type="Number" required="true" editable="false" value="{invoice>/amount}"/>
 
       <Label text="Status" required="true"/>
-      <Select id="updateStatus" width="100%" required="true">
+      <Select id="updateStatus" width="100%" required="true" selectedKey="{invoice>/status}">
         <items>
           <core:Item key="Pending" text="Pending"/>
           <core:Item key="Paid" text="Paid"/>

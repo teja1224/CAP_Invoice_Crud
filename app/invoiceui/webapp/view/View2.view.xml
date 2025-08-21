@@ -4,9 +4,16 @@
     xmlns="sap.m">
 
     <Page title="Invoice Number - {invoiceModel>/invoiceNumber}" showNavButton="true" navButtonPress=".onNavBack">
+        <Toolbar>
+            <ToolbarSpacer />
+            <Button
+                text="Edit"
+                icon="sap-icon://edit"
+                press="onOpenUpdateDialog" />
+        </Toolbar>
+
         <VBox class="sapUiSmallMargin">
 
-            <!-- Invoice Info -->
             <VBox  class="sapUiSmallMarginBottom">
                 <HBox>
                     <Label text="Amount : " />
