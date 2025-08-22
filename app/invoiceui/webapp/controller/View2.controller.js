@@ -124,7 +124,7 @@ sap.ui.define([
             //items
             // const itemsData = this.updateDialog.getModel("itemsModel").getData();
             const itemsData = sap.ui.getCore().byId("updateItemsTable").getModel("itemsModel").getData();
-            
+
             const valid = this.validateItems(itemsData)
             if(!valid) return;
 
@@ -295,22 +295,34 @@ sap.ui.define([
             }
             
             itemsData.forEach((item, index) => {
+                item.nameState = "None"
+                item.quantityState = "None";
+                item.priceState = "None"
+
                 if(!item.name || item.name.trim() === "") {
+                    item.nameState = "Error"
                     allItemsValid=false
-                    MessageBox.error(`Item ${index + 1}: Name is required.`)
-                    return allItemsValid
+                    
+                }
+                if (!item.price || isNaN(item.price) || parseFloat(item.price) <= 0) {
+                    item.priceState = "Error"
+                    allItemsValid = false;
+                    // MessageBox.error(`Item ${index + 1}: Please enter a valid price.`);
                 }
                 if (!item.quantity || isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+                    item.quantityState = "Error"
                     allItemsValid = false;
-                    MessageBox.error(`Item ${index + 1}: Please enter a valid quantity.`);
-                    return allItemsValid
+                    
                 }
-                if (isNaN(item.price) || parseFloat(item.price) <= 0) {
-                    allItemsValid = false;
-                    MessageBox.error(`Item ${index + 1}: Please enter a valid price.`);
-                    return allItemsValid;
-                }
+                    
             });
+
+            const oTable = sap.ui.getCore().byId("updateItemsTable")
+            oTable.getModel("itemsModel").refresh(true)
+
+            if (!allItemsValid) {
+                MessageBox.error("Please correct highlighted errors before saving.");
+            }
             return allItemsValid;
         },
 

@@ -56,13 +56,13 @@
             <items>
                 <ColumnListItem>
                 <cells>
-                    <Input value="{itemsModel>name}" placeholder="Item Name"/>
-                    <Input value="{itemsModel>price}" type="Number" liveChange="onItemPriceChange" >
+                    <Input value="{itemsModel>name}" valueState="{itemsModel>nameState}" placeholder="Name"/>
+                    <Input value="{itemsModel>price}" valueState="{itemsModel>priceState}" placeholder="100.00" type="Number" liveChange="onItemPriceChange" >
                         <customData>
                             <core:CustomData key="dialogType" value="create"/>
                         </customData>
                     </Input>
-                    <Input value="{itemsModel>quantity}" type="Number" liveChange="onItemQuantityChange">
+                    <Input value="{itemsModel>quantity}" valueState="{itemsModel>quantityState}" placeholder="1" type="Number" liveChange="onItemQuantityChange">
                         <customData>
                             <core:CustomData key="dialogType" value="create"/>
                         </customData>

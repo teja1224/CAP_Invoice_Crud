@@ -40,13 +40,13 @@
         <items>
           <ColumnListItem>
             <cells>
-              <Input value="{itemsModel>name}"/>
-              <Input value="{itemsModel>price}" liveChange="onItemPriceChange">
+              <Input value="{itemsModel>name}" valueState="{itemsModel>nameState}" placeholder="Name"/>
+              <Input value="{itemsModel>price}" valueState="{itemsModel>priceState}" placeholder="100.00" liveChange="onItemPriceChange">
                 <customData>
                   <core:CustomData key="dialogType" value="update"/>
                 </customData>
               </Input>
-              <Input value="{itemsModel>quantity}" liveChange="onItemQuantityChange">
+              <Input value="{itemsModel>quantity}" valueState="{itemsModel>quantityState}" placeholder="1" liveChange="onItemQuantityChange">
                 <customData>
                   <core:CustomData key="dialogType" value="update"/>
                 </customData>

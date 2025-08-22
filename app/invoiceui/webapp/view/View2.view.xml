@@ -39,16 +39,16 @@
             <Table items="{itemsModel>/}" >
                 <columns>
                     <Column><Text text="Item Name"/></Column>
-                    <Column><Text text="Quantity"/></Column>
                     <Column><Text text="Price"/></Column>
+                    <Column><Text text="Quantity"/></Column>
                     <Column><Text text="Total"/></Column>
                 </columns>
                 <items>
                     <ColumnListItem>
                         <cells>
                             <Text text="{itemsModel>name}" />
-                            <Text text="{itemsModel>quantity}" />
                             <Text text="{itemsModel>price}" />
+                            <Text text="{itemsModel>quantity}" />
                             <Text text="{itemsModel>total}" />
                         </cells>
                     </ColumnListItem>
