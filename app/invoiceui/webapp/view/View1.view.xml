@@ -8,6 +8,10 @@
         id="page"
         title="{i18n>title}"
     >
+    <headerContent>
+        <Text text="{= 'Welcome, ' + ${customerDetails>/customerName} }" class="bigBoldText sapUiSmallMarginEnd"  />
+        <Button text="Logout" press="onLogout" icon="sap-icon://log"></Button>
+    </headerContent>
         <VBox>
             <Toolbar
                 class="sapUiMediumMarginBottom"

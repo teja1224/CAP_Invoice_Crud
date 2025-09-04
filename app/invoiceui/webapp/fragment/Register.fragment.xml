@@ -1,0 +1,19 @@
+<Dialog xmlns="sap.m" 
+        xmlns:mvc="sap.ui.core.mvc"
+        title="Register"
+        class="sapUiContentPadding">
+
+    <VBox class="sapUiSmallMargin">
+        <Input id="regName" placeholder="Full Name"/>
+        <Input id="regEmail" type="Email" placeholder="Email"/>
+        <Input id="regPhone" type="Tel" placeholder="Phone Number"/>
+        <Input id="regPassword" type="Password" placeholder="Password"/>
+    </VBox>
+
+    <beginButton>
+        <Button text="Submit" type="Emphasized" press="onRegister"/>
+    </beginButton>
+    <endButton>
+        <Button text="Cancel" press=".onCloseRegister"/>
+    </endButton>
+</Dialog>

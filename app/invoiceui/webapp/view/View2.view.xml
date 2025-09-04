@@ -9,7 +9,8 @@
             <Button
                 text="Edit"
                 icon="sap-icon://edit"
-                press="onOpenUpdateDialog" />
+                press="onOpenUpdateDialog" 
+                type="Emphasized"/>
         </Toolbar>
 
         <VBox class="sapUiSmallMargin">

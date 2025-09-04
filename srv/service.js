@@ -1,22 +1,21 @@
 const cds = require("@sap/cds");
-const srvMethods = require("@sap/cds/lib/srv/srv-methods");
 
 module.exports = cds.service.impl(async function () {
   const {Customers, Invoices} = this.entities;
 
   this.on("login", async (req) => {
     const {email, password} = req.data;
-    const customer = await SELECT.one.from(Customers).where({email, password});
+    const customer = await SELECT.one.from(Customers).where({email});
 
     if (!customer) {
-      return req.error(401, "Invalid email or password");
+      return req.error(401, "Customer Not Found");
     }
 
-    return {
-      ID: customer.ID,
-      name:customer.name,
-      email:customer.email
-    };
+    if(customer.password !== password){
+      return req.reject((401, "Invalid Password"))
+    }
+
+    return JSON.stringify(customer);
   });
 
   this.on("getNextInvoiceNumber", async () => {

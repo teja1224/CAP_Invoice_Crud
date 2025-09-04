@@ -6,10 +6,10 @@ service InvoiceService {
   entity Invoices  as projection on inc.Invoices;
   entity Items     as projection on inc.Items;
 
-  //   type InvoiceNumberResponse {
+  //   type CustomerResponse {
   //     invoiceNumber : String;
   // }
   function getNextInvoiceNumber()                 returns String;
-  action   login(email: String, password: String) returns Customers;
+  action login(email: String, password: String) returns String;
 
 }

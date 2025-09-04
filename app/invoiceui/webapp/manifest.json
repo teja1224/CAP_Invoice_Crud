@@ -93,8 +93,16 @@
       },
       "routes": [
         {
+          "pattern": "",
+          "name": "login",
+          "target": [
+            "login"
+          ]
+        },
+
+        {
           "name": "RouteView1",
-          "pattern": ":?query:",
+          "pattern": "invoiceList",
           "target": [
             "TargetView1"
           ]
@@ -108,6 +116,10 @@
         }
       ],
       "targets": {
+        "login": {
+          "viewId": "Login",
+          "viewName": "Login"
+        },
         "TargetView1": {
           "id": "View1",
           "name": "View1"

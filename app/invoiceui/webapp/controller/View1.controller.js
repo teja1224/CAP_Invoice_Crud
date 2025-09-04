@@ -8,15 +8,39 @@ sap.ui.define([
 
     return Controller.extend("ns.invoiceui.controller.View1", {
         onInit() {
-            this.onRead();
             const bus = sap.ui.getCore().getEventBus();
             bus.subscribe("Invoices", "Reload", this.onRead, this);
+            const oRouter = sap.ui.core.UIComponent.getRouterFor(this);
+            oRouter.getRoute("RouteView1").attachPatternMatched(this._onRouteMatched, this);
+
         },
+        _onRouteMatched: function () {
+        // const oSession = sap.ui.getCore().getModel("sessionModel")
+        // if (!oSession) {
+        //     // safety: no customer logged in, redirect to login
+        //     const oRouter = sap.ui.core.UIComponent.getRouterFor(this);
+        //     oRouter.navTo("Login", {}, true);
+        //     return;
+        // }
+        this.onRead()
+    },
 
         onRead: function () {
             const oView = this.getView();
-            oView.setBusy(true);
+            
+            const customerstorage = localStorage.getItem("customerDetails");
 
+            if (customerstorage==null){
+                MessageToast.show("Unauthorized")
+                this.onLogout()
+                return;
+            }
+            oView.setBusy(true);
+            const customerDetails = new sap.ui.model.json.JSONModel(JSON.parse(customerstorage));
+            
+            const customerId = customerDetails.getProperty("/customerId")
+        
+            oView.setModel(customerDetails, "customerDetails")
             setTimeout(() => {
                 const oModel = this.getOwnerComponent().getModel();
                 const mParameters = {
@@ -46,8 +70,14 @@ sap.ui.define([
                         oView.setBusy(false)
                     }
                 };
-                oModel.read("/Invoices", mParameters);
-            }, 1200)
+                oModel.read("/Invoices", {
+                    filters: [
+                        new sap.ui.model.Filter("customer_ID", sap.ui.model.FilterOperator.EQ, customerId)
+                    ],
+                    success: mParameters.success,
+                    error: mParameters.error
+                });
+            }, 0)
 
 
             // const allfilters = []
@@ -63,6 +93,16 @@ sap.ui.define([
             // }
 
 
+        },
+
+        onLogout: function () {
+            const oSessionModel = sap.ui.getCore().getModel("sessionModel");
+            if (oSessionModel) {
+                oSessionModel.setData({});
+            }
+            localStorage.removeItem("customerDetails");
+            const oRouter = sap.ui.core.UIComponent.getRouterFor(this);
+            oRouter.navTo("login", {}, true);
         },
 
         clientfilter: function (selectedStatus, searchValue) {
@@ -311,8 +351,8 @@ sap.ui.define([
                 success: function (oData) {
                     const nextInvoiceNumber = JSON.parse(oData.getNextInvoiceNumber);
                     var oCreateModel = new sap.ui.model.json.JSONModel({
-                        invoiceNumber: nextInvoiceNumber, // Pre-fill invoice number
-                        date: this.formatDateToLocal(new Date()),           // Optional: prefill today's date
+                        invoiceNumber: nextInvoiceNumber,
+                        date: this.formatDateToLocal(new Date()),
                         amount: "",
                         customer_ID: ""
                     });
@@ -341,7 +381,9 @@ sap.ui.define([
                             this.createDialog = oDialog;
                         }.bind(this));
                     } else {
-                        sap.ui.getCore().byId("idInvoiceNumber").setValue(nextInvoiceNumber);
+                        this.createDialog.setModel(oCreateModel, "createData")
+                        const itemsModel = new sap.ui.model.json.JSONModel([]);
+                        this.createDialog.setModel(itemsModel, "itemsModel");
                         this.createDialog.open();
                         this.datePickerInputDisable("idDate");
                     }
@@ -403,6 +445,8 @@ sap.ui.define([
         },
 
         onCreateSubmit: function () {
+            const customerDetails = sap.ui.getCore().getModel("sessionModel")
+            const customerId = customerDetails.getProperty("/customerId")
             if (!this.validateFields("create")) {
                 MessageToast.show("Please fill in all fields.")
                 return;
@@ -410,24 +454,32 @@ sap.ui.define([
             const oDialog = this.createDialog;
 
             const oDatePicker = sap.ui.getCore().byId("idDate");
-            const selectedDate = oDatePicker.getDateValue();
-            // check if date is selected
-            if (!selectedDate) {
-                oDatePicker.setValueState("Error");
-                oDatePicker.setValueStateText("Please select date from DatePicker");
-                return;
-            }
+            // const selectedDate = oDatePicker.getDateValue();
+            // // check if date is selected
+            // if (!selectedDate) {
+            //     oDatePicker.setValueState("Error");
+            //     oDatePicker.setValueStateText("Please select date from DatePicker");
+            //     return;
+            // }
 
             const itemsData = oDialog.getModel("itemsModel").getData();
             const valid = this.validateItems(itemsData)
             if (!valid) return;
+            const aCleanItems = itemsData.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                total:item.total
+            }));
+
 
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("idInvoiceNumber").getValue(),
                 date: oDatePicker.getValue(),
                 amount: parseFloat(sap.ui.getCore().byId("idAmount").getValue()),
                 status: sap.ui.getCore().byId("idStatus").getSelectedKey(),
-                items: itemsData
+                items: aCleanItems,
+                customer_ID: customerId
             };
             const oModel = this.getView().getModel()
 

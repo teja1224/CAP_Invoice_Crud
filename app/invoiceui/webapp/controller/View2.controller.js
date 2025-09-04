@@ -128,12 +128,18 @@ sap.ui.define([
             const valid = this.validateItems(itemsData)
             if(!valid) return;
 
+            const aCleanItems = itemsData.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                total:item.total
+            }));
             const payload = {
                 invoiceNumber: sap.ui.getCore().byId("updateInvoiceNumber").getValue(),
                 date: this.formatDateToLocal(selectedDate),
                 amount: parseFloat(sap.ui.getCore().byId("updateAmount").getValue()),
                 status: sap.ui.getCore().byId("updateStatus").getSelectedKey(),
-                items:itemsData
+                items:aCleanItems
             };
             const oModel = this.getView().getModel();
 
